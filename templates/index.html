@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timing is Key in CTF</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 15px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        color: #444;
+        text-align: center;
+    }
+
+    img {
+        width: 100%;
+        max-width: 300px;
+        display: block;
+        margin: 20px auto;
+    }
+
+    form {
+        margin-top: 20px;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #4cae4c;
+    }
+
+    #message {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    #couponSection {
+    text-align: center;
+    background-color: #ffdfba; /* Light orange background */
+    border: 1px dashed #fd7e14; /* Dashed border */
+    border-radius: 5px;
+}
+
+.infoRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+    #couponCode {
+        font-weight: bold;
+        color: #d9534f; /* Reddish color for the coupon code */
+    }
+
+    #userBalanceSection {
+    background-color: #e7f3fe; /* Light blue background */
+    border-left: 4px solid #5bc0de; /* Solid left border */
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-flex; /* Changed to inline-flex */
+    align-items: center;
+}
+
+#userBalance {
+    font-weight: bold;
+    color: #31708f; /* Darker blue for the balance amount */
+}
+    #applyCouponForm {
+    display: flex;
+    justify-content: start;
+    gap: 10px;
+}
+
+#applyCouponForm label {
+    margin: 0;
+}
+
+#applyCouponForm input {
+    flex-grow: 1;
+}
+    
+.productInfo {
+    display: flex;
+    padding:10px;
+    justify-content: space-between; /* Aligns children at start and end of container */
+    align-items: center; /* Vertically centers items */
+    margin-bottom: 15px;
+}
+
+</style>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Apply coupon
+            $("#applyCouponForm").submit(function(event) {
+                event.preventDefault();
+                applyCoupon();
+            });
+
+            // Delete coupon
+            $("#deleteCouponForm").submit(function(event) {
+                event.preventDefault();
+                deleteCoupon();
+            });
+
+            // Buy product
+            $("#buyProductForm").submit(function(event) {
+                event.preventDefault();
+                buyProduct();
+            });
+
+            function applyCoupon() {
+                var couponCode = $("#coupon_code").val();
+                $.ajax({
+                    type: "POST",
+                    url: "/apply_coupon",
+                    data: { coupon_code: couponCode },
+                    success: function(data) {
+                        if(data.status === "error") {
+                            // Display error message on the page
+                            $("#message").text(data.message).css("color", "red");
+                        } else {
+                            // Update specific parts of the page
+                            updatePageContent(data);
+                            $("#message").text(data.message).css("color", "green");
+                        }
+                    }
+                });
+            }
+
+
+            function deleteCoupon() {
+                $.ajax({
+                    type: "POST",
+                    url: "/delete_coupon",
+                    success: function(data) {
+                        if(data.status === "success") {
+                            // Show the apply coupon form and hide the delete coupon form
+                            $("#applyCouponForm").show();
+                            $("#deleteCouponForm").hide();
+                            // Reset the coupon code input field
+                            $("#coupon_code").val('');
+                            // Update other parts of the page as necessary
+                            $("#productPrice").text(data.new_product_price);
+                            $("#message").text("Coupon deleted successfully.").css("color", "red");
+                        } else {
+                            // Handle the error scenario
+                            $("#message").text("Failed to delete the coupon.").css("color", "red");
+                        }
+                    }
+                });
+            }
+
+
+            function buyProduct() {
+                $.ajax({
+                    type: "POST",
+                    url: "/buy_product",
+                    success: function(data) {
+                        // Show response message
+                        alert(data);
+                    }
+                });
+            }
+
+            function updatePageContent(data) {
+                // Update the page elements based on the AJAX response
+                $("#productPrice").text(data.new_product_price);
+                $("#userBalance").text(data.new_user_balance);
+                if(data.status === "success" && data.already_applied !== true) {
+                    // Hide the apply coupon form and show the delete coupon form
+                    $("#applyCouponForm").hide();
+                    $("#deleteCouponForm").show();
+                } else if(data.status === "error" && data.already_applied === true) {
+                    // Show the delete coupon form if coupon already applied
+                    $("#deleteCouponForm").show();
+                }
+            }
+
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Info Row for Product Price and User Balance -->
+        <div class="infoRow">
+            <div id="userBalanceSection">
+                <p>Your Balance: $<span id="userBalance">{{ user_balance }}</span></p>
+            </div>
+        </div>
+        <div id="couponSection">
+            <p>Use Coupon "ibrahim" for a $100 discount!</p>
+        </div>
+    <img src="/static/iphone.jpg" alt="Product Image" style="width:100%; max-width:300px; display:block; margin:0 auto; padding:15px">
+        <div id="message"></div>
+        <div class="productInfo">
+            <span class="productPrice">Price: $<span id="productPrice">{{ product_price }}</span></span>
+            <span class="productName">iPhone X</span>
+        </div>
+            {% if coupon_applied %}
+            <p>Coupon Applied: Yes (Code: {{ coupon_code }})</p>
+            <form id="deleteCouponForm" style="display:block;">
+                <button type="submit">Delete Coupon</button>
+            </form>
+        {% else %}
+            <form id="applyCouponForm">
+                <label for="coupon_code">Coupon Code:</label>
+                <input type="text" id="coupon_code" name="coupon_code" value="{{ coupon_code }}" required>
+                <button type="submit">Apply Coupon</button>
+            </form>
+            <!-- Initially hidden delete coupon form -->
+            <form id="deleteCouponForm" style="display:none;">
+                <button type="submit">Delete Coupon</button>
+            </form>
+        {% endif %}
+    
+
+        <form id="buyProductForm">
+            <button type="submit">Buy Product</button>
+        </form>
+    </div>
+</body>
+</html>
