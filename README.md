@@ -3,7 +3,7 @@
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/leetIbrahim/CTF-RaceCondition
-   cd ctf-race-condition
+   cd CTF-RaceCondition
 
 2. **Set up a virtual environment and install dependencies:**
     ```python3 -m venv venv
